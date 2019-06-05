@@ -15,7 +15,7 @@ install_dir = input_array[0]
 #get the newest copy, remove if already exists
 result = %x(rm -rf /tmp/scout-public)
 print "Cloning the git repo...\n"
-result = %x(cd /tmp && git clone https://github.com/jacobschultz/scout-public.git)
+result = %x(cd /tmp && git clone https://github.com/jamf/scout-public.git)
 #clone the env files
 print "Backing up .env files...\n"
 result = %x(cp #{install_dir}/api/.env /tmp/scout-bu.env)

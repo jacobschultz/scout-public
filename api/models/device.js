@@ -17,7 +17,7 @@ var xml2js = require('xml2js');
 exports.upsertDevice = function(deviceData){
   return new Promise(function(resolve,reject) {
     //Try to get the device first
-    exports.getDeviceByUDIDAndServerId(deviceData.jss_udid, deviceData.server_id)
+    exports.getDeviceByUDID(deviceData.jss_udid)
     .then(function(results) {
       //If it exists, update it, else insert new device
       if (results.length == 0){
@@ -341,6 +341,18 @@ exports.getStoredDevicesByServer = function(jssURL) {
 exports.insertNewDevice = function(deviceData){
   return new Promise(function(resolve,reject) {
     db.get().query('INSERT INTO devices SET ?', deviceData, function(error, results, fields) {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(results);
+      }
+    });
+  });
+}
+
+exports.deleteDeviceByScoutId = function(deviceId){
+  return new Promise(function(resolve,reject) {
+    db.get().query('DELETE FROM devices WHERE id = ?', [deviceId], function(error, results, fields) {
       if (error) {
         reject(error);
       } else {

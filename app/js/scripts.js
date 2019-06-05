@@ -1,12 +1,51 @@
+window.all_crons = null;
 function getOrgDetails(){
   var details = getRequestObject('/settings/organization/details', null, 'GET');
   details.done(function(detailsObject){
     if ('header_name' in detailsObject){
       $("#header_display_name").html(detailsObject.header_name);
     }
+    if ('cron_jobs' in detailsObject){
+      window.all_crons = detailsObject.cron_jobs;
+      var scoutTable = $("#cron-jobs-table").DataTable();
+      scoutTable.clear();
+      for (i = 0; i < detailsObject.cron_jobs.length; i++) {
+        let cronDetails = detailsObject.cron_jobs[i].split(' ');
+        const button = '<button onclick="viewFullCronString('+i+');" type="button" class="btn btn-info btn-circle"><i class="fa fa-eye"></i></button>';
+        scoutTable.row.add([cronDetails[0], cronDetails[3], cronDetails[4], button]);
+      }
+      scoutTable.draw(false);
+    }
   })
   .fail(function(xhr){
     console.log(xhr);
+  });
+}
+
+function viewFullCronString(index) {
+  swal('Full Cron String: ',
+    window.all_crons[i],
+    'success');
+}
+
+function updateCronJobsOnScoutServer() {
+  swal({
+    title: "Confirm Action",
+    text: "Are you sure you want to manually refresh the scout cron jobs? This will update the cron jobs with all jamf pro servers in the database. This writes directly to the system crontab file and can't be undone.",
+    icon: "warning",
+    buttons: true,
+    dangerMode: true
+  })
+  .then((willSync) => {
+    if (willSync){
+      var cronJobs = getRequestObject('/settings/cronjobs', null, 'PUT');
+      cronJobs.done(function(result){
+        swal('Cron jobs updated!', 'The cron jobs in the scout databse have been syncronized to the server. Verify they are correct in the cron job table. ','success');
+      })
+      .fail(function(xhr){
+        swal('Error', 'Scout was unable to update the cron jobs on the scout server. Please try restarting the server.','error');
+      });
+    }
   });
 }
 
@@ -20,6 +59,9 @@ function refreshAllDevices(showPrompt){
   var result = getRequestObject('/devices/refresh/all', reqBody, 'PUT');
   result.done(function(r){
     $.Toast.hideToast();
+    getComputerCount();
+    getMobileDeviceCounts();
+    getTvCount();
     if (showPrompt){
       swal('Devices Updating...', 'The devices are continuing to update in the background, try refreshing the devices view in a few secords or more. NOTE: A manual refresh of the page is required since this is happening async in the background.', 'success');
     }
@@ -585,6 +627,10 @@ function updateComputers(){
       $("#send-computer-command-button").hide();
     }
   });
+  getComputerCount();
+}
+
+function getComputerCount() {
   var computers = getRequestObject('/devices/count/computer', null, 'GET');
   //Get a count of the total devices seperate since data tables can't handle success functions
   computers.done(function(computers){
@@ -597,6 +643,10 @@ function updateComputers(){
 
 function updateTvs(){
   var tvsTable = $("#tvs-table").DataTable(getDataTablesRequest('tv'));
+  getTvCount();
+}
+
+function getTvCount() {
   var tvs = getRequestObject('/devices/count/tv', null, 'GET');
   //Get a count of the total devices seperate since data tables can't handle success functions
   tvs.done(function(tvs){
@@ -619,6 +669,10 @@ function updateMobileDevices(){
       $("#send-mobile-command-button").hide();
     }
   });
+  getMobileDeviceCounts();
+}
+
+function getMobileDeviceCounts(){
   var mobile = getRequestObject('/devices/count/mobile', null, 'GET');
   //Get a count of the total devices seperate since data tables can't handle success functions
   mobile.done(function(mobiledevices){
@@ -820,6 +874,33 @@ function createMDMCommand(deviceType, mdmCommand, options){
     }
     console.log(xhr);
   });
+}
+
+function deleteDeviceByScoutId(deviceId) {
+  swal({
+    title: "Confirm device deletion",
+    text: "Deleting this device will only remove it from the Scout database, not from the the Jamf Pro Server. It may repopulate following the next inventory update if it's still in the Jamf Pro Server.",
+    icon: "warning",
+    buttons: true,
+    dangerMode: true
+  })
+  .then((willDelete) => {
+    if (willDelete){
+      var deleteRequest = getRequestObject('/devices/id/'+deviceId, null, 'DELETE');
+      //render the table after the servers are loaded from the DB
+      deleteRequest.done(function(response){
+        swal('Device Removed', 'The device has been removed from scout.', 'success');
+      })
+      .fail(function(xhr) {
+        if (xhr.status == 401){
+          swal('No Permissions', 'Your user does not have permission to delete devices from scout.', 'error');
+        } else {
+          console.log(xhr);
+          swal('Delete Failed', 'Unable to delete device from scout. Check the console for more details.', 'error');
+        }
+      });
+    }
+  })
 }
 
 function sendMDMCommand(deviceType, mdmCommand){

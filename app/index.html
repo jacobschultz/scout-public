@@ -784,6 +784,30 @@
                            <tbody id="users-table-body">
                            </tbody>
                         </table>
+                        <i>Click a permission for an individual user to toggle it on or off. </i>
+                      </div>
+                   </div>
+                   <div class="panel panel-default">
+                      <div class="panel-heading">
+                          Scout Cron Jobs
+                      </div>
+                      <!-- /.panel-heading -->
+                      <div class="panel-body">
+                        <button type="button" onclick="updateCronJobsOnScoutServer();" class="btn btn-warning">Manually Sync Cron Jobs</button>
+                        <br/><br/>
+                        <table id="cron-jobs-table" class="table table-striped table-bordered table-hover" style="width:100%">
+                           <thead>
+                              <tr>
+                                 <th>Cron String</th>
+                                 <th>Server URL</th>
+                                 <th>Job Type</th>
+                                 <th>Action</th>
+                              </tr>
+                           </thead>
+                           <tbody id="cron-jobs-table-body">
+                           </tbody>
+                        </table>
+                        <i>Scout should automatically syncronize the cron jobs upon server start, and when a new server is added, however when a server is deleted, this utility can be used to manually refresh the cron jobs. It can also be used to clean up the scout related cron jobs automatically if they are out of sync.</i>
                       </div>
                    </div>
                 </div>

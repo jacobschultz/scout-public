@@ -9,7 +9,7 @@ print "\n";
 
 print "Thank you for downloading scout. This script will check dependencies and then install the application.\n"
 print "Written by Jacob Schultz\n"
-print "Available at: github.com/jacobschultz/scout-public\n"
+print "Available at: github.com/jamf/scout-public\n"
 print "\n"
 
 print "Do you have a MySQL server setup and available to you? (y/n)\n"
