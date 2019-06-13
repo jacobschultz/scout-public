@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 var devices = require('express').Router();
 var device = require('../models/device.js');
 var report = require('../models/export.js');
