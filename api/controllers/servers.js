@@ -185,9 +185,11 @@ servers.delete('/delete/:id', function(req,res) {
     });
   }
   var serverId = req.params.id;
+  var serverObject = null;
   //Delete the server from the database
   server.deleteServer(serverId)
   .then(function(result) {
+    serverObject = result.server_object;
     //If success, then delete the devices for that jps
     device.deleteDevicesByJPSId(serverId)
     .then(function(result) {
@@ -197,7 +199,15 @@ servers.delete('/delete/:id', function(req,res) {
         //Take the server list and pass it to the handler
         cron.handleServerRecords(serverList)
         .then(function(cronResult){
-          return res.status(201).send({ status : "success" });
+          // Remove the scout admin user from the JSS
+          server.deleteScoutAdminUser(serverObject.url, serverObject.username, serverObject.password)
+          .then(result => {
+            return res.status(201).send({ status : "success" });
+          })
+          .catch(err => {
+            console.log(err);
+            return res.status(206).send({ error : "Unable to remove ScoutAdmin user" });
+          });
         })
         .catch(function(error){
           return res.status(206).send({ error : "Unable to verify cron jobs, please restart your server to fix this." });

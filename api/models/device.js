@@ -25,7 +25,6 @@ exports.upsertDevice = function(deviceData){
           new winston.transports.File({ filename: process.env.ROOT_DIR+'logs/sync.log' })
         ]
     });
-    console.log(process.env.DEBUG_LOGGING);
     if (process.env.DEBUG_LOGGING) {
       logger.log('debug', 'Upserting device by UDID: %s, Serial Number: %s', deviceData.jss_udid, deviceData.jss_serial);
     }
@@ -320,7 +319,7 @@ exports.getDeviceWithSearch = function(platform, search) {
   return new Promise(function(resolve,reject) {
   if (search != null && search != ''){
     var wild = '%' + search + '%';
-    db.get().query('SELECT devices.*, servers.org_name FROM devices JOIN servers ON devices.server_id = servers.id WHERE device_type = ? AND (jss_name LIKE ? OR jss_serial LIKE ? OR jss_udid LIKE ?)', [platform,wild,wild,wild], function(error, results, fields) {
+    db.get().query('SELECT devices.*, servers.org_name, servers.url FROM devices JOIN servers ON devices.server_id = servers.id WHERE device_type = ? AND (jss_name LIKE ? OR jss_serial LIKE ? OR jss_udid LIKE ? OR jss_Model LIKE ? OR servers.org_name LIKE ? OR servers.url LIKE ?)', [platform,wild,wild,wild,wild,wild,wild], function(error, results, fields) {
       if (error) {
         reject(error);
       } else {

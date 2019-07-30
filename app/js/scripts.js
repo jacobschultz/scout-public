@@ -742,15 +742,20 @@ function verifyDeleteServer(){
 function deleteServer(id){
   //Make the user auth again before deleting the server
   var serverDelete = getRequestObject('/servers/delete/' + id.toString(), null, 'DELETE');
-  serverDelete.done(function(res){
-    console.log(res);
-    swal('Server Deleted', 'The server and all of it\'s devices have been removed.', 'success');
+  serverDelete.done(function(data, textStatus, jqXHR){
+    if (jqXHR.status == 206 && jqXHR.responseText.includes("ScoutAdmin")){
+      swal('Server Deleted', 'The server and all of it\'s devices have been removed. Note: ScoutAdmin could not be found or deleted. This may require manual cleanup.', 'success');
+    } else if (jqXHR.status == 206 && jqXHR.responseText.includes("cron")){
+      swal('Server Deleted', 'The server and all of it\'s devices have been removed. Note: Scout could not clean up your cron jobs automatically. Please clean these up manually.', 'success');
+    } else {
+      swal('Server Deleted', 'The server and all of it\'s devices have been removed. The ScoutAdmin user has also been deleted.', 'success');
+    }
     loadServerTable();
     $("#remove-server-modal").modal('hide');
   })
   .fail(function(xhr){
     $("#remove-server-modal").modal('hide');
-    console.log(xhr);
+    swal('Error', 'There was an error deleting your server. This may require manual database cleanup if the devices or the server was not removed.', 'error');
   });
 }
 

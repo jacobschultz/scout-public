@@ -96,7 +96,7 @@ db.connect(function(err) {
       });
     } else if (serverType == 'limited'){
       logger.log('info', 'Execute Directory: %s', process.cwd());
-      console.log(serverURL);
+      console.log('Getting inventory for: ' + serverURL);
       logger.log('info', 'Getting all devices for %s', serverURL);
       var serverId;
       //Get the server details from the database
@@ -106,8 +106,10 @@ db.connect(function(err) {
         serverId = serverDetails[0].id;
         servers.getAllDevices(serverURL, serverDetails[0].id, serverDetails[0].username, db.decryptString(serverDetails[0].password))
         .then(function(allDevicesList){
+          console.log('Got ' + allDevicesList.length + ' from the JPS API.');
           //Update each device in the database
           Promise.all(allDevicesList.map(deviceData => devices.upsertDevice(deviceData))).then(function(result){
+            console.log('Updated: ' + result.length + ' devices in scout.');
             logger.log('info', '%d devices have been updated in the databse.', result.length);
             //Update the ScoutAdmin user's password to a new string
               if (!process.env.DISABLE_SCOUT_ADMIN_USER || process.env.DISABLE_SCOUT_ADMIN_USER == "false"){
@@ -133,16 +135,19 @@ db.connect(function(err) {
               }
           })
           .catch(function(error){
+          	console.log(error);
             logger.log('error', 'Error inserting devices: %s', error);
             process.exit(0);
           });
         })
         .catch(function(error){
+          console.log(error);
           logger.log('error', 'Error getting devices: %s', error);
           process.exit(0);
         });
       })
       .catch(function(error){
+        console.log(error);
         logger.log('error', 'Error getting server from database: %s', error);
         process.exit(0);
       });
