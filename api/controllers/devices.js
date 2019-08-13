@@ -258,7 +258,7 @@ function getDataTablesRes(draw, data, totalRecords, filteredRecords,platform){
   for (i = 0; i < data.length; i++){
     //Get the text for the view live button
     var liveViewButton = '<button type="button" class="btn btn-info btn-circle" onclick="getDeviceLive(\''+platform+'\',\''+data[i].jss_serial+'\',\''+ data[i].jss_udid+'\')"><i class="fa fa-eye"></i></button>&nbsp;<button type="button" class="btn btn-danger btn-circle" onclick="deleteDeviceByScoutId(\''+data[i].id+'\')"><i class="fa fa-trash"></i></button>';
-    var item = [ data[i].jss_name, data[i].org_name, data[i].jss_Model, data[i].jss_serial, new Date(data[i].jss_last_inventory).toLocaleDateString(), data[i].jss_udid, getBoolVal(data[i].jss_managed),liveViewButton];
+    var item = [ data[i].jss_name, data[i].org_name, data[i].jss_Model, data[i].jss_serial, new Date(data[i].jss_last_inventory).toLocaleDateString(), data[i].jss_udid, getBoolVal(data[i].jss_managed), getBoolVal(data[i].is_active), liveViewButton];
     dataList.push(item);
   }
   return { "draw" : parseInt(draw), "recordsTotal" : totalRecords, "recordsFiltered" :  filteredRecords, "data" : dataList};

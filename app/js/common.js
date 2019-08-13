@@ -54,6 +54,7 @@ function getDataTablesRequest(platform){
         { data : "Last Inventory" },
         { data : "UDID" },
         { data : "Managed" },
+        { data : "Active"},
         { data : "Action" }
       ]
     },

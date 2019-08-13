@@ -72,7 +72,7 @@ exports.getExpandedInventory = function(url, username, password, device, jssServ
   return new Promise(function(resolve,reject) {
     //First translate mobile device to what the JPS API expects
     var scoutDeviceType = device.device_type;
-    if (device.device_type == 'mobile'){
+    if (device.device_type == 'mobile' || device.device_type == 'tv'){
       device.device_type = 'mobiledevice';
     }
     //Get the device information
@@ -387,7 +387,7 @@ exports.deleteDeviceByScoutId = function(deviceId){
 }
 
 exports.updateDevice = function(deviceData, deviceId, type){
-  var updateObj = {jss_name : deviceData.jss_name, jss_serial : deviceData.jss_serial, jss_last_inventory : deviceData.jss_last_inventory, jss_model : deviceData.jss_model, jss_managed : deviceData.jss_managed, jss_udid : deviceData.jss_udid};
+  var updateObj = {jss_name : deviceData.jss_name, jss_serial : deviceData.jss_serial, jss_last_inventory : deviceData.jss_last_inventory, jss_model : deviceData.jss_model, jss_managed : deviceData.jss_managed, jss_udid : deviceData.jss_udid, is_active: deviceData.is_active};
   return new Promise(function(resolve,reject) {
     db.get().query('UPDATE devices SET ? WHERE jss_udid = ?', [updateObj, deviceData.jss_udid], function(error, results, fields) {
       if (error) {
@@ -417,7 +417,17 @@ exports.upsertFullInventory = function(deviceObjFromJSS, jss_server_id){
         //Return a promise based on the status of the insert
         resolve(exports.insertFullInventory(deviceObjFromJSS));
       } else {
-        resolve(exports.updateFullInventory(deviceObjFromJSS, { jss_id : jss_id, jss_server_id : jss_server_id}));
+        // check to see if the device is active or not
+        console.log(JSON.stringify(existingDevice, null, 2))
+        var timeDiff = new Date().getTime() - Date.parse(existingDevice.report_date_utc);
+        var daySinceCheckin = Math.ceil(timeDiff / (1000 * 3600 * 24));
+        if (daySinceCheckin >= process.env.DAYS_ACTIVE) {
+          existingDevice[collectionName].general.is_active = false;
+        } else {
+          existingDevice[collectionName].general.is_active = true;
+        }
+        
+        resolve(exports.updateFullInventory(existingDevice, { jss_id : jss_id, jss_server_id : jss_server_id}));
       }
     })
     .catch(error => {

@@ -1,0 +1,4 @@
+# ignores these filder in any directory
+**/node_modules
+**/npm-debug.log
+**/data-volumes

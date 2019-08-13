@@ -13,6 +13,7 @@
     "asset_tag" : "Asset Tag",
     "mdm_capable" : "MDM Capable",
     "last_contact_time" : "Last Contact Time",
+    "is_active": "Active",
     "initial_entry_date" : "Initial Entry Date",
     "itunes_store_account_is_active" : "Has iTunes Store Account"
   },

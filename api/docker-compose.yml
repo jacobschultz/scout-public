@@ -1,0 +1,27 @@
+version: "3"
+services:
+  scout-sql:
+    image: mysql
+    command: --default-authentication-plugin=mysql_native_password
+    restart: always
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./init_sql:/docker-entrypoint-initdb.d
+      - ./data-volumes/mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_USER: $MYSQL_USER
+      MYSQL_PASSWORD: $MYSQL_PASS
+      MYSQL_DATABASE: $MYSQL_DB
+  scout-mongo:
+    image: bitnami/mongodb
+    restart: always
+    volumes:
+      - ./data-volumes/mongodb:/bitnami
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGODB_USERNAME=$NOSQL_USER
+      - MONGODB_PASSWORD=$NOSQL_PASS
+      - MONGODB_DATABASE=$NOSQL_DB

@@ -383,15 +383,30 @@ function translateAPIDeviceToDatabaseObject(device, serverId, type){
   } else {
     lastDate = device.report_date_utc;
   }
+
+  var isActive;
+  // check to see if the device should be flagged as inactive
+  if (calcDaysPast(lastDate) >= process.env.ACTIVE_DAYS) {
+    isActive = false;
+  } else {
+    isActive = true;
+  }
+
   var dbObject = {"server_id" : serverId, "device_type" : type, "jss_id" : device.id, "jss_name" : cleanInput(device.name),
                   "jss_serial" : device.serial_number, "jss_last_inventory" : lastDate,
-                  "jss_model" : device.model, "jss_managed" : device.managed, "jss_udid" : device.udid};
+                  "jss_model" : device.model, "jss_managed" : device.managed, "jss_udid" : device.udid, "is_active" : isActive};
   return dbObject;
 }
 
 function cleanInput(dirtyString) {
   // clean non-ascii characters from string
   return dirtyString.replace(/[^\x00-\x7F]/g, "");
+}
+
+function calcDaysPast(oldDate) {
+  // calculate the number of days a date is in the past
+  var timeDiff = new Date().getTime() - Date.parse(oldDate);
+  return Math.ceil(timeDiff / (1000 * 3600 * 24));
 }
 
 exports.getAllDevices = function(url, serverId, username, password){

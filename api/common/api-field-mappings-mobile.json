@@ -10,6 +10,7 @@
     "ip_address" : "IP Address",
     "last_backup_time_utc" : "Last Backup Time",
     "last_inventory_update_utc" : "Last Inventory Update",
+    "is_active": "Active",
     "managed" : "Is Managed",
     "model" : "Device Model",
     "model_number" : "Model Number",
