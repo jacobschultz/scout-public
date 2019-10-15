@@ -17,6 +17,16 @@ var devices = require('../models/device.js');
                                 'ComputerPolicyFinished','ComputerPushCapabilityChanged', 'MobileDeviceCommandCompleted', 'MobileDevicePushSent'];
 const supportedServerEvents = ['JSSShutdown','JSSStartup'];
 
+/**
+ * This endpoint listens for webhook calls that are sent from the Jamf Pro Server
+ * @route POST /webhooks/device/{jssId}
+ * @group Webhooks - Operations about Scout Webhooks
+ * @param {string} event.body.required - Event that called this webhook
+ * @param {string} jssId.query.required - Id of Jamf Pro Server to listen from
+ * @returns {object} 200 - Successfully upserted device
+ * @returns {Error}  500 - Unable to upsert devices
+ * @returns {Error}  400 - Unsupported method
+ */
 webhooks.post('/device/:jssId', function(req,res) {
   var type = 'computer';
   //Only mobile devices have imei
@@ -47,6 +57,12 @@ webhooks.post('/device/:jssId', function(req,res) {
  *
  * The URL to hit is: yourserverurl:port/webhooks/server/JSSIDHERE
  * THIS SERVER ONLY SUPPORTS JSON
+ */
+/**
+ * This endpoint displays "Coming soon"
+ * @route POST /webhooks/server/{jssId}
+ * @group Webhooks - Operations about Scout Webhooks
+ * @returns {object} 418 - Status message
  */
 webhooks.post('/server/:jssId', function(req,res) {
   res.status(418).send({

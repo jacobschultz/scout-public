@@ -39,7 +39,7 @@ if (cluster.isMaster){
   console.log(" \\__ \\/ _/ _ \\ || |  _|");
   console.log(" |___/\\__\\___/\\_,_|\\__|");
   console.log("                       ");
-  console.log("Written by Jacob Schultz");
+  console.log("Originally created by Jacob Schultz");
   console.log("                       ");
   //For revery server in the database, make sure our cron jobs are up to date
   servers.getAllServers()

@@ -5,6 +5,8 @@ var secretKey = process.env.JWT_KEY;
 var bcrypt = require('bcrypt-nodejs');
 var ldap = require('ldapjs');
 var jwttoken = require('jsonwebtoken');
+var audit = require('../common/logger.js').logActivity;
+var logError = require('../common/logger.js').logError;
 
 
 function createToken(user) {
@@ -35,16 +37,19 @@ function authDN(dn, password, cb) {
 users.get('/all', function(req,res){
   //Check if the user has permission to do user managment
   if (!req.user || !hasPermission(req.user, 'can_edit_users')){
+    audit(req.user, "Failed attempt to list all users.")
     //This user isn't authorized, exit
     return res.status(401).send({ error : "User has no permissions" });
   }
   //get the users from the database
   user.getAllUsers()
   .then(function(userList){
+    audit(req.user, "All users list accessed.")
     return res.status(200).send(userList);
   })
   .catch(error => {
     console.log(error);
+    logError({message: "Unable to get users.", user: req.user, error});
     return res.status(500).send({
       error: "Unable to get users"
     });
@@ -70,17 +75,20 @@ users.post('/create', function(req, res) {
     return res.status(400).send({  error : "Missing Required Fields" });
   }
   if (req.body.register_pin != process.env.REG_PIN){
+    audit({user_agent: req.headers['user-agent'], ip: req.connection.remoteAddress, message: `Tried to create ${req.body.email} user with incorrect PIN: ${req.body.register_pin}`});
     return res.status(401).send({ error : "Incorrect Register Pin"});
   }
   //Insert the user into the database
   user.createUser(req.body.email, req.body.password)
   .then(function(userObject){
     //Send a success with the token
+    audit({user: req.body.email, user_agent: req.headers['user-agent'], ip: req.connection.remoteAddress, message: `Successfully created user.`});
     return res.status(201).send({status : "success", token: createToken(userObject)});
   })
   .catch(error => {
     console.log('User Register Failed: ');
     console.log(error);
+    logError({message: "Unable to create users.", user: req.user, error});
     //Check for dupe user error
     if (error.hasOwnProperty('status')){
       return res.status(409).send({  error: "Email already exists"  });
@@ -112,6 +120,7 @@ users.post('/login/basic', function(req, res) {
   user.getUserFromEmail(req.body.email)
   .then(function(userObject){
     if (!userObject || !bcrypt.compareSync(req.body.password, userObject[0].hash)) {
+      audit({user: req.body.email, user_agent: req.headers['user-agent'], ip: req.connection.remoteAddress, message: `Failed login attempt.`});
       return res.status(401).send({
         error : "Unable to Log In"
       });
@@ -123,9 +132,11 @@ users.post('/login/basic', function(req, res) {
     var resp = { userId : userObject[0].id, token : createToken(user), "can_mdm" : userObject[0].mdm_commands, "notificaitons" : userObject[0].notifications,
                 "can_edit" : userObject[0].can_edit, "can_delete" : userObject[0].can_delete, "can_create" : userObject[0].can_create, "can_edit_users" : userObject[0].can_edit_users,
                 "can_build_reports" : userObject[0].can_build_reports, "is_admin" : userObject[0].is_admin};
+    audit({user: req.body.email, user_agent: req.headers['user-agent'], ip: req.connection.remoteAddress, message: "Successful login."});
     res.status(200).send(resp);
   })
   .catch(error => {
+    logError({message: "Unable to log in user.", user: req.user, error});
     console.error(error);
     return res.status(400).send({ error: "Unable to log in user"});
   });
@@ -159,6 +170,7 @@ users.post('/verify', function(req,res){
     return res.status(200).send({ verified : isVerified});
   })
   .catch(error => {
+    logError({message: "Unable to find user.", user: req.user, error});
     return res.status(500).send({
       error: "Unable to find user"
     });

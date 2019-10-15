@@ -8,6 +8,8 @@ var schedule = require('node-schedule');
 var user = require('../models/user.js');
 var exec = require('child_process').exec;
 var cron = require('../common/cron-handler.js');
+var audit = require('../common/logger.js').logActivity;
+var logError = require('../common/logger.js').logError;
 
 /**
  * This endpoint adds a new server
@@ -45,17 +47,20 @@ servers.post('/add', function(req,res) {
         return res.status(201).send({ status : "success" });
       })
       .catch(function(error){
+        logError({message: "Unable to verify cron jobs, please restart your server to fix this.", user: req.user, error});
         return res.status(206).send({ error : "Unable to verify cron jobs, please restart your server to fix this." });
         console.log(error);
       });
     })
     .catch(function(error){
+      logError({message: "Unable to verify cron jobs, please restart your server to fix this.", user: req.user, error});
       return res.status(206).send({ error : "Unable to verify cron jobs, please restart your server to fix this." });
       console.log(error);
     });
   })
   .catch(error => {
     console.log(error);
+    logError({message: error.error, user: req.user, error});
     if (error.error == "Unable to contact server"){
       return res.status(401).send({ error: "Unable to contact JPS Server - check creds and try again"});
     } else if (error.error == "Unable to insert server to the database"){
@@ -77,6 +82,8 @@ servers.post('/add', function(req,res) {
  * @returns {Error}  400 - Unable to find server for given url or the server does not have an emergency admin setup
  */
 servers.post('/access/', function(req,res){
+  //Log that this endpoint is being accessed regardless of outcome
+  audit(null, 'Attempted to gain emergency access to server');
   //Make sure this feature isn't disabled
   try {
     if (process.env.DISABLE_SCOUT_ADMIN_USER == "true"){
@@ -95,10 +102,12 @@ servers.post('/access/', function(req,res){
       //destroy the password from the database
       server.setScoutAdminPassword(req.body.url, null)
       .then(function(result){
+        audit(req.user, 'ScoutAdmin password access granted');
         return res.status(200).send(resObj);
       })
       .catch(error => {
         console.log(error);
+        logError({message: "Unable to destory password, refusing to return password.", user: req.user, error});
         return res.status(500).send({
           error: "Unable to destory password, refusing to return password"
         });
@@ -111,6 +120,7 @@ servers.post('/access/', function(req,res){
   })
   .catch(error => {
     console.log(error);
+    logError({message: "Unable to find server.", user: req.user, error});
     return res.status(400).send({
       error: "Unable to find server"
     });
@@ -158,6 +168,7 @@ servers.put('/update/:id', function(req,res){
   })
   .catch(error => {
     console.log(error);
+    logError({message: "Unable to update JPS server.", user: req.user, error});
     return res.status(500).send({
       error: "Unable to update JPS server"
     });
@@ -165,7 +176,31 @@ servers.put('/update/:id', function(req,res){
 });
 
 /**
- * This gets all of the servers in Scout
+ * This deletes all devices in the scout database for a given server, they will refresh on next worker run
+ * @route DELETE /servers/delete/devices/{serverId}
+ * @group Servers - Operations about Jamf Pro Servers
+ * @param {string} id.query.required - The Id of the Jamf Pro Server to delete devices from
+ * @returns {object} 200 - A success object if the devices fro the server were deleted
+ * @returns {Error}  500 - Unable to query the database or delete all of the server's devices
+ */
+servers.delete('/delete/devices/:serverId', async function(req,res){
+  if (!req.params.serverId) {
+    return res.status(400).send({ error : "Missing Required Fields" });
+  }
+  if (!user.hasPermission(req.user,'can_delete')){
+    return res.status(401).send({ error : "User is not authorized to delete" });
+  }
+  device.deleteDevicesByJPSId(req.params.serverId)
+  .then(result => {
+    return res.status(200).send({ status : "success" });
+  })
+  .catch(error => {
+    return res.status(500).send({ eror : "Unable to delete devices by server id" });
+  });
+});
+
+/**
+ * This deletes a server in scout and all of it's devices
  * @route DELETE /servers/delete/{serverId}
  * @group Servers - Operations about Jamf Pro Servers
  * @param {string} id.query.required - The Id of the Jamf Pro Server to delete
@@ -204,12 +239,14 @@ servers.delete('/delete/:id', function(req,res) {
           .then(result => {
             return res.status(201).send({ status : "success" });
           })
-          .catch(err => {
+          .catch(error => {
             console.log(err);
+            logError({message: "Unable to remove ScoutAdmin user", user: req.user, error});
             return res.status(206).send({ error : "Unable to remove ScoutAdmin user" });
           });
         })
         .catch(function(error){
+          logError({message: "Unable to verify cron jobs.", user: req.user, error});
           return res.status(206).send({ error : "Unable to verify cron jobs, please restart your server to fix this." });
           console.log(error);
         });
@@ -217,6 +254,7 @@ servers.delete('/delete/:id', function(req,res) {
     })
     .catch(error => {
       console.log(error);
+      logError({message: "Unable to delete devices.", user: req.user, error});
       res.status(500).send({
         error: "Unable to delete devices"
       });
@@ -224,6 +262,7 @@ servers.delete('/delete/:id', function(req,res) {
   })
   .catch(error => {
     console.log(error);
+    logError({message: "Unable to delete JPS server.", user: req.user, error});
     res.status(500).send({
       error: "Unable to delete JPS server"
     });
@@ -252,6 +291,7 @@ servers.get('/', function(req,res) {
   })
   .catch(error => {
     console.log(error);
+    logError({message: "Unable to get servers.", user: req.user, error});
     res.status(500).send({
       error: "Unable to get servers"
     });
