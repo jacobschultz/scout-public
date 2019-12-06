@@ -152,12 +152,16 @@ exports.updateReportById = function(reportObject, reportId){
 exports.updateReportLineItem = function(lineItem, order, reportId){
   //Set some meta fields
   lineItem.report_id = reportId;
-  //Check if we need to replace a parenthesis with a boolean value
+  // replace value with boolean to match DB schema
   if (lineItem.parenthesis_one == "("){
     lineItem.parenthesis_one = true;
+  } else {
+    lineItem.parenthesis_one = false;
   }
   if (lineItem.parenthesis_two == ")"){
     lineItem.parenthesis_two = true;
+  } else {
+    lineItem.parenthesis_two = false;
   }
   return new Promise(function(resolve,reject) {
     //First make sure this line item exists

@@ -98,6 +98,8 @@ if (cluster.isMaster){
     secret: process.env.JWT_KEY
   });
 
+
+
   var app = module.exports = express();
   //Setup the swagger docs
   const expressSwagger = require('express-swagger-generator')(app);
@@ -123,6 +125,12 @@ if (cluster.isMaster){
                   in: 'header',
                   name: 'Authorization',
                   description: "",
+              },
+              Basic: {
+                type: 'basic',
+                in: 'header',
+                name: 'Authorization',
+                description: "Basic auth that must be setup in the Jamf Pro server. This covers all webhooks endpoints. The user name is webhookuser and the password is set on install."
               }
           }
       },
@@ -143,9 +151,28 @@ if (cluster.isMaster){
   //Allow cross origin requests
   app.use(cors());
   app.use(compression()); //Compress all routes
+
+  // basic auth function for the hooks
+  hookAuth = (req, res, next) => {
+    const b64auth = (req.headers.authorization || '').split(' ')[1] || ''
+    const strauth = new Buffer.from(b64auth, 'base64').toString()
+    const splitIndex = strauth.indexOf(':')
+    const user = strauth.substring(0, splitIndex)
+    const password = strauth.substring(splitIndex + 1)
+    // check the password if the env isn't set, auth isn't enabled so pass through
+    if ((user && password && user === "webhookuser" && password === process.env.WEBHOOK_PASS) || process.env.WEBHOOK_PASS === "" || process.env.WEBHOOK_PASS === null) {
+      // grant access
+      return next()
+    }
+    // access denied
+    res.set('WWW-Authenticate', 'Basic realm="401"')
+    return res.status(401).send("Authentication required")
+  }
+
   //require auth to use endpoints
   app.use('/servers', jwtCheck);
   app.use('/devices', jwtCheck);
+  app.use('/webhooks', hookAuth)
   app.use('/reports', jwtCheck);
   app.use('/users/all', jwtCheck);
   app.use('/users/verify', jwtCheck);

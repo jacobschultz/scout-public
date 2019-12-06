@@ -79,6 +79,8 @@ servers.post('/add', function(req,res) {
  * @param {string} url.body.required - The URL of the Jamf Pro Server
  * @returns {object} 200 - An object containing the ScoutAdmin user password
  * @returns {Error}  500 - Unable to remove the password from the database after getting it for the user, will not return password
+ * @returns {Error} 503 - Scout admin user is deleted
+ * @returns {Error} 403 - User is not an admin
  * @returns {Error}  400 - Unable to find server for given url or the server does not have an emergency admin setup
  */
 servers.post('/access/', function(req,res){
@@ -91,6 +93,9 @@ servers.post('/access/', function(req,res){
     }
   } catch (exc){
     console.log('Unable to verify scout admin user setting, going to try to get it anyway');
+  }
+  if (!user.hasPermission(req.user, 'is_admin')){
+    return res.status(403).send({error : 'No Permissions'});
   }
   //Make sure this user has access to view passwords
   //First make sure there is a password that hasn't been destroyed

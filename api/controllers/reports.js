@@ -223,7 +223,7 @@ reports.post('/save', function(req,res){
     //the insert id is the report id
     var newReportId = result.insertId;
     Promise.all(lineItems.map(lineItem => report.insertReportLineItem(lineItem, newReportId))).then(function(results){
-      audit({user: req.user, user_agent: req.headers['user-agent'], ip: req.connection.remoteAddress, message: `Successfully deleted report ${req.params.reportId}`});
+      audit({user: req.user, user_agent: req.headers['user-agent'], ip: req.connection.remoteAddress, message: `Successfully updated report ${req.params.reportId}`});
       return res.status(200).send({ "status" : "success", "id" : newReportId});
     })
     .catch(error => {

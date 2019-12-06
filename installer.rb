@@ -96,6 +96,14 @@ enc_key = STDIN.noecho(&:gets).chomp
 print "Please provide a JWT Key (Can be changed): \n"
 jwt_key = STDIN.noecho(&:gets).chomp
 
+print "Do you want to add authentication to webhooks? (Y/n) "
+authHook = gets.chomp
+hook_pass = ""
+if !["n", "N"].include?(authHook)
+  print "Please provide a password for Jamf Pro server webhooks (Can be changed): \n"
+  hook_pass = STDIN.noecho(&:gets).chomp
+end
+
 print "Would you like to use LDAP? (y/n)\n"
 is_ldap = gets.chomp
 #declare these variables because they'll still go in the .env file even if not used
@@ -128,6 +136,7 @@ open('./api/.env', 'w') do |f|
   f.puts "ACTIVE_DAYS=#{active_days}"
   f.puts "JWT_KEY=#{jwt_key}"
   f.puts "ENC_KEY=#{enc_key}"
+  f.puts "WEBHOOK_PASS=#{hook_pass}"
   f.puts "LDAP_URL=#{ldap_url}"
   f.puts "LDAP_STR=#{ldap_domain}"
   f.puts "SCOUT_URL=#{hostname}"
